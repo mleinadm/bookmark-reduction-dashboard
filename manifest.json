@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Bookmark Counter",
+  "version": "1.0",
+  "description": "Shows the total count of your Chrome bookmarks.",
+  "permissions": [
+    "bookmarks",
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Bookmark Counter",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

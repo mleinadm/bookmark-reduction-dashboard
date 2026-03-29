@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bookmark Counter</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap");
+
+    :root {
+      --bg: #f3f7f5;
+      --surface: #ffffff;
+      --surface-soft: #f8fbf9;
+      --line: #d8e7df;
+      --text: #15231c;
+      --muted: #5f7468;
+      --brand: #2d8a57;
+      --brand-soft: #dff2e7;
+      --accent: #b56f18;
+      --shadow: 0 18px 40px rgba(26, 55, 40, 0.08);
+    }
+
+    body.theme-yellow {
+      --bg: #faf6ea;
+      --surface: #fffdf8;
+      --surface-soft: #fffbf0;
+      --line: #efe1b8;
+      --text: #2f2410;
+      --muted: #7b6a3d;
+      --brand: #cb9c1b;
+      --brand-soft: #f9efc8;
+      --accent: #9d5f17;
+      --shadow: 0 18px 40px rgba(97, 73, 16, 0.1);
+    }
+
+    body.theme-red {
+      --bg: #fbf0ef;
+      --surface: #fffafa;
+      --surface-soft: #fff4f3;
+      --line: #efcfcc;
+      --text: #321a1d;
+      --muted: #856468;
+      --brand: #cc4b4b;
+      --brand-soft: #f8dddd;
+      --accent: #b1462f;
+      --shadow: 0 18px 40px rgba(110, 41, 41, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 440px;
+      min-height: 720px;
+      font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top right, color-mix(in srgb, var(--brand) 10%, transparent), transparent 35%),
+        linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
+    }
+
+    .app {
+      padding: 18px;
+    }
+
+    .layout {
+      display: grid;
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 18px;
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--brand-soft) 52%, white 48%), var(--surface) 82%);
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .hero-copy {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 3px;
+      background: var(--brand);
+    }
+
+    .hero h1 {
+      margin-top: 14px;
+      font-family: "Manrope", "Inter", sans-serif;
+      font-size: 28px;
+      line-height: 1.08;
+      letter-spacing: -0.04em;
+      max-width: 260px;
+    }
+
+    .hero p {
+      margin-top: 10px;
+      max-width: 290px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .hero-icon {
+      width: 68px;
+      height: 68px;
+      border-radius: 18px;
+      padding: 12px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+
+    .hero-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .hero-metric {
+      margin-top: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 18px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+    }
+
+    .hero-metric-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .hero-metric-value {
+      margin-top: 6px;
+      font-family: "Manrope", "Inter", sans-serif;
+      font-size: 38px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.05em;
+      color: var(--brand);
+    }
+
+    .hero-metric-subtext {
+      font-size: 13px;
+      color: var(--muted);
+      text-align: right;
+      max-width: 120px;
+      line-height: 1.5;
+    }
+
+    .alert-banner {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid color-mix(in srgb, var(--accent) 18%, white 82%);
+      background: color-mix(in srgb, var(--accent) 10%, white 90%);
+    }
+
+    .alert-banner.show {
+      display: flex;
+    }
+
+    .alert-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 4px;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .alert-copy strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .alert-copy div:last-child {
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat {
+      padding: 16px;
+    }
+
+    .stat-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 14px;
+      background: var(--brand-soft);
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .stat-icon img {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-family: "Manrope", "Inter", sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .stat-detail {
+      margin-top: 8px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mini-card {
+      padding: 16px;
+    }
+
+    .mini-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .mini-value {
+      margin-top: 10px;
+      font-family: "Manrope", "Inter", sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .mini-copy {
+      margin-top: 8px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+
+    .section {
+      padding: 16px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .section-subtitle {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .chart-card {
+      padding: 16px;
+    }
+
+    .chart-title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .chart-caption {
+      margin-top: 6px;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .chart-wrap {
+      margin-top: 14px;
+      padding: 10px;
+      border-radius: 16px;
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 170px;
+    }
+
+    .chart-note {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .status-box {
+      padding: 16px;
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    .status-box strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .status-box span {
+      display: block;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.16s ease, opacity 0.16s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.7;
+      cursor: progress;
+      transform: none;
+    }
+
+    .primary-action {
+      color: white;
+      background: var(--brand);
+    }
+
+    .secondary-action {
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--line);
+    }
+
+    .loading,
+    .message {
+      padding: 28px 18px 4px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      margin: 0 auto 12px;
+      border-radius: 50%;
+      border: 3px solid var(--brand-soft);
+      border-top-color: var(--brand);
+      animation: spin 0.8s linear infinite;
+    }
+
+    .message {
+      display: none;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.error {
+      color: #8a3c3c;
+    }
+
+    .footer {
+      padding: 0 6px 4px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+<body class="theme-green">
+  <div class="app">
+    <div class="layout">
+      <section class="card hero">
+        <div class="hero-top">
+          <div class="hero-copy">
+            <div class="eyebrow">Daily Focus</div>
+            <h1>Reduce bookmarks</h1>
+            <p>Track your pace, see what was cleared today, and stay on schedule during the 8 AM to 5 PM workday.</p>
+          </div>
+          <div class="hero-icon">
+            <img src="icons/icon128.png" alt="Bookmark dashboard icon" />
+          </div>
+        </div>
+
+        <div class="hero-metric">
+          <div>
+            <div class="hero-metric-label">Remaining bookmarks</div>
+            <div id="hero-remaining" class="hero-metric-value">0</div>
+          </div>
+          <div id="hero-status" class="hero-metric-subtext">Loading...</div>
+        </div>
+      </section>
+
+      <div id="interval-alert" class="alert-banner">
+        <div class="alert-dot" aria-hidden="true"></div>
+        <div class="alert-copy">
+          <div id="interval-alert-title"><strong>No Bookmark Cleared</strong></div>
+          <div id="interval-alert-copy">The current work block has not recorded a bookmark reduction yet.</div>
+        </div>
+      </div>
+
+      <div id="loading" class="loading">
+        <div class="spinner"></div>
+        Building your bookmark dashboard...
+      </div>
+
+      <div id="error" class="message error"></div>
+      <div id="empty" class="message">No bookmark URLs were found yet. Save a few bookmarks in Chrome to begin tracking.</div>
+
+      <div id="dashboard" class="layout" style="display: none;">
+        <section class="stats">
+          <div class="card stat">
+            <div class="stat-top">
+              <div class="stat-icon"><img src="icons/icon48.png" alt="" /></div>
+              <div class="stat-label">Saved URLs</div>
+            </div>
+            <div id="url-count" class="stat-value">0</div>
+            <div class="stat-detail">Current bookmark URLs still saved.</div>
+          </div>
+
+          <div class="card stat">
+            <div class="stat-top">
+              <div class="stat-icon"><img src="icons/icon16.png" alt="" /></div>
+              <div class="stat-label">Reduced Today</div>
+            </div>
+            <div id="reduced-today" class="stat-value">0</div>
+            <div id="reduced-today-detail" class="stat-detail">No reductions recorded yet today.</div>
+          </div>
+
+          <div class="card stat">
+            <div class="stat-top">
+              <div class="stat-icon"><img src="icons/icon48.png" alt="" /></div>
+              <div class="stat-label">Folders</div>
+            </div>
+            <div id="folder-count" class="stat-value">0</div>
+            <div class="stat-detail">Folders still in your bookmark tree.</div>
+          </div>
+
+          <div class="card stat">
+            <div class="stat-top">
+              <div class="stat-icon"><img src="icons/icon16.png" alt="" /></div>
+              <div class="stat-label">Deepest Level</div>
+            </div>
+            <div id="depth-count" class="stat-value">0</div>
+            <div class="stat-detail">Current hierarchy depth.</div>
+          </div>
+        </section>
+
+        <section class="split">
+          <div class="card mini-card">
+            <div class="mini-label">Daily Target</div>
+            <div id="daily-target" class="mini-value">0</div>
+            <div id="daily-target-copy" class="mini-copy">Target for today.</div>
+          </div>
+          <div class="card mini-card">
+            <div class="mini-label">Ahead / Behind</div>
+            <div id="pace-delta" class="mini-value">0</div>
+            <div id="pace-copy" class="mini-copy">Comparing your count to today's target.</div>
+          </div>
+          <div class="card mini-card">
+            <div class="mini-label">To Goal</div>
+            <div id="remaining-to-goal" class="mini-value">0</div>
+            <div id="goal-copy" class="mini-copy">Bookmarks left above 50.</div>
+          </div>
+        </section>
+
+        <section class="card chart-card">
+          <div class="section-head">
+            <div class="section-title">Remaining vs target</div>
+            <div id="target-caption" class="section-subtitle">14-day pace</div>
+          </div>
+          <div class="chart-caption">Your remaining bookmarks compared with the target path to reach 50.</div>
+          <div class="chart-wrap">
+            <canvas id="remaining-chart" width="420" height="180"></canvas>
+          </div>
+          <div id="remaining-chart-note" class="chart-note">Tracking your current pace.</div>
+        </section>
+
+        <section class="card chart-card">
+          <div class="section-head">
+            <div class="section-title">Daily reductions</div>
+            <div id="snapshot-caption" class="section-subtitle">Updated just now</div>
+          </div>
+          <div class="chart-caption">Bookmarks cleared each day across the last 14 days.</div>
+          <div class="chart-wrap">
+            <canvas id="reduction-chart" width="420" height="180"></canvas>
+          </div>
+          <div id="reduction-chart-note" class="chart-note">Every bar shows bookmarks cleared that day.</div>
+        </section>
+
+        <section class="card section">
+          <div class="section-head">
+            <div class="section-title">Workday rhythm</div>
+            <div class="section-subtitle">8 AM to 5 PM</div>
+          </div>
+          <div class="status-grid">
+            <div class="status-box">
+              <strong>Current block</strong>
+              <span id="interval-status">Waiting for first scan...</span>
+            </div>
+            <div class="status-box">
+              <strong>Last cleared</strong>
+              <span id="last-cleared-status">No bookmark reduction recorded yet.</span>
+            </div>
+          </div>
+        </section>
+
+        <div class="actions">
+          <button id="refresh-button" class="primary-action" type="button">Refresh Dashboard</button>
+          <button id="manage-button" class="secondary-action" type="button">Open Bookmark Manager</button>
+        </div>
+      </div>
+
+      <div id="footer" class="footer">Waiting for first scan...</div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
