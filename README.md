@@ -1,90 +1,122 @@
 # Bookmark Counter
 
-A Chrome extension that turns bookmark cleanup into a lightweight daily dashboard.
+> A Chrome extension that turns bookmark cleanup into a lightweight daily dashboard.
 
-Instead of only showing how many bookmarks you have, the popup tracks your remaining bookmark URLs against a reduction goal, shows a 14-day pace chart, highlights daily progress, and alerts you during work blocks when no bookmark has been cleared.
+Track your remaining bookmarks against a 14-day reduction goal, visualize progress across three charts, and stay on pace with workday block alerts and hourly suggestions.
+
+---
 
 ## Features
 
-- Live bookmark stats for:
-  - Remaining bookmark URLs
-  - Folders
-  - Deepest bookmark nesting level
-  - Bookmarks reduced today
-- Dynamic theme colors:
-  - Green when bookmark URLs are below `50`
-  - Yellow when bookmark URLs are above `50`
-  - Red when bookmark URLs are above `100`
-- A 14-day chart showing:
-  - Remaining bookmarks
-  - Target pace toward the goal of `50`
-- A second 14-day chart showing daily bookmark reductions
-- A workday reminder system for the blocks:
-  - `8:00 AM - 11:00 AM`
-  - `11:00 AM - 2:00 PM`
-  - `2:00 PM - 5:00 PM`
-- A top alert banner that shows `No Bookmark Cleared` if no reduction is recorded in the current 3-hour block
-- Local progress persistence with `chrome.storage.local`
-- Quick access to the Chrome bookmark manager
+### Stats & Themes
+
+| Metric | Description |
+|---|---|
+| Remaining URLs | Live count of saved bookmark URLs |
+| Folders | Total number of bookmark folders |
+| Deepest Level | Maximum nesting depth in the tree |
+| Reduced Today | Bookmarks cleared since midnight |
+
+The popup theme shifts automatically based on your current URL count:
+
+| Count | Theme |
+|---|---|
+| ≤ 50 | 🟢 Green |
+| 51 – 100 | 🟡 Yellow |
+| > 100 | 🔴 Red |
+
+### Charts
+
+- **Remaining vs Target** — 14-day line chart of actual count against the daily pace target
+- **Daily Reductions** — Bar chart of bookmarks cleared per day over 14 days
+- **Added vs Removed** — Daily comparison of bookmarks added and removed
+
+### Workday Alerts
+
+Monitors three 3-hour blocks each weekday:
+
+```
+8:00 AM – 11:00 AM   ·   11:00 AM – 2:00 PM   ·   2:00 PM – 5:00 PM
+```
+
+A banner appears at the top of the popup if no bookmark was cleared in the current block. Background notifications fire for any missed block after it ends.
+
+### Suggestions
+
+An hourly suggestion card surfaces one of your saved bookmarks with quick actions to **open**, **delete**, or **skip** to the next suggestion.
+
+### Data & Controls
+
+- Progress persisted locally via `chrome.storage.local`
+- Export full dashboard history as JSON
+- Reset the 14-day baseline to the current bookmark count
+- One-click access to the Chrome bookmark manager
+
+---
 
 ## How It Works
 
-The extension reads your Chrome bookmark tree and counts bookmark URLs, folders, and depth.
+On each sync the extension reads the full Chrome bookmark tree and records:
 
-It also stores a small local progress record in extension storage:
+- **Baseline count** — the starting bookmark total when tracking began
+- **Daily snapshots** — remaining URL count stored once per day
+- **Change events** — adds and removes inferred from count deltas
+- **Suggested bookmark** — one bookmark rotated hourly from the full URL list
 
-- A baseline bookmark count
-- Daily remaining bookmark totals
-- Inferred clear events when the current bookmark count drops below the previous stored count
+That history drives the charts, the glide-path target, background notifications, and the work-block alert logic.
 
-That stored history is used to build the 14-day charts and the work-block alert logic.
+---
 
-## Goal Logic
+## Goal & Pace Logic
 
-The cleanup goal is to get bookmark URLs below `50`.
+The target is to get below **50 bookmark URLs** within 14 days.
 
-The current implementation uses a 14-day glide path:
+$$\text{target}_{\,d} = \max\!\left(\text{baseline} - \frac{(\text{baseline} - 50)}{13} \times d,\; 50\right)$$
 
-- The target starts from the tracked baseline bookmark count
-- It slopes down over `14` days
-- The minimum target is capped at `50`
+Where $d$ is the number of days elapsed since tracking started (0–13).
 
-If your current bookmark URL count is:
+| Status | Condition |
+|---|---|
+| On pace / ahead | Current count ≤ today's target |
+| Behind pace | Current count > today's target |
 
-- Less than or equal to the target for today, you are on pace or ahead
-- Higher than the target for today, you are behind pace
+---
 
 ## Project Files
 
-- [`manifest.json`](/Users/tx/Documents/chrome/manifest.json)  
-  Chrome extension manifest and permissions
-- [`popup.html`](/Users/tx/Documents/chrome/popup.html)  
-  Popup layout and styling
-- [`popup.js`](/Users/tx/Documents/chrome/popup.js)  
-  Bookmark counting, persistence, alert logic, and chart rendering
-- [`icons/`](/Users/tx/Documents/chrome/icons)  
-  Extension icon assets used by Chrome and the popup UI
+| File | Purpose |
+|---|---|
+| `manifest.json` | Extension manifest and permissions |
+| `popup.html` | Popup layout and styling |
+| `popup.js` | Stats, charts, alert logic, and UI interactions |
+| `background.js` | Background sync, notifications, and baseline reset |
+| `icons/` | Icon assets used by Chrome and the popup UI |
+
+---
 
 ## Installation
 
-1. Open Chrome and go to `chrome://extensions/`
-2. Enable `Developer mode`
-3. Click `Load unpacked`
-4. Select this project folder:
-   `/Users/tx/Documents/chrome`
-5. Pin the extension if you want fast access from the toolbar
+1. Open Chrome and navigate to `chrome://extensions/`
+2. Enable **Developer mode** (toggle in the top-right corner)
+3. Click **Load unpacked**
+4. Select this folder: `~/Documents/chrome`
+5. Pin the extension from the toolbar for quick access
 
-If you change the manifest or popup files, reload the unpacked extension from the extensions page.
+> After editing any source file, click the reload icon on the extensions page to apply changes.
+
+---
 
 ## Usage
 
-1. Open the extension popup
-2. Review your remaining bookmark count and target pace
-3. Clear bookmarks during the workday
-4. Reopen or refresh the popup to record updated progress
-5. Use `Open Bookmark Manager` to jump directly into Chrome bookmarks
+| Action | How |
+|---|---|
+| Refresh stats | Click **Refresh** in the popup |
+| Clear bookmarks | Use **Open Bookmark Manager** or the suggestion card |
+| Export progress | Click **Export History** to download a JSON snapshot |
+| Reset plan | Click **Reset Baseline** to restart the 14-day window |
+| Act on a suggestion | Open, delete, or skip it from the suggestion card |
 
-The dashboard updates automatically when bookmark changes are detected while the popup is open.
+The dashboard syncs automatically whenever Chrome detects a bookmark change.
 
 ## Permissions
 
@@ -92,11 +124,15 @@ The dashboard updates automatically when bookmark changes are detected while the
   Needed to read the bookmark tree
 - `storage`  
   Needed to store progress history, clear events, and daily totals
+- `alarms`  
+  Needed for background periodic sync and missed-block checks
+- `notifications`  
+  Needed to alert you when a work block ends without any bookmark being cleared
 
 ## Notes
 
 - The charts are based on locally stored history, not cloud sync
-- Bookmark reductions are inferred from drops in the total bookmark URL count
+- Bookmark reductions and additions are inferred from changes in the total bookmark URL count
 - If bookmarks are added back later, the dashboard will reflect the new remaining total
 - The popup is designed as a compact Windows-inspired glass dashboard
 

@@ -284,6 +284,61 @@
       gap: 12px;
     }
 
+    .suggestion-card {
+      padding: 16px;
+    }
+
+    .suggestion-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .suggestion-title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .suggestion-pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .suggestion-name {
+      font-family: "Manrope", "Inter", sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.03em;
+    }
+
+    .suggestion-url {
+      margin-top: 8px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--muted);
+      word-break: break-word;
+    }
+
+    .suggestion-meta {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .suggestion-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
     .mini-card {
       padding: 16px;
     }
@@ -520,6 +575,21 @@
       <div id="empty" class="message">No bookmark URLs were found yet. Save a few bookmarks in Chrome to begin tracking.</div>
 
       <div id="dashboard" class="layout" style="display: none;">
+        <section class="card suggestion-card">
+          <div class="suggestion-head">
+            <div class="suggestion-title">Hourly bookmark suggestion</div>
+            <div class="suggestion-pill">1 per hour</div>
+          </div>
+          <div id="suggestion-name" class="suggestion-name">Loading suggestion...</div>
+          <div id="suggestion-url" class="suggestion-url"></div>
+          <div id="suggestion-meta" class="suggestion-meta">Pick one bookmark to review, open, or delete.</div>
+          <div class="suggestion-actions">
+            <button id="open-suggestion-button" class="primary-action" type="button">Open</button>
+            <button id="delete-suggestion-button" class="secondary-action" type="button">Delete</button>
+            <button id="next-suggestion-button" class="secondary-action" type="button">Next</button>
+          </div>
+        </section>
+
         <section class="stats">
           <div class="card stat">
             <div class="stat-top">
@@ -600,6 +670,18 @@
           <div id="reduction-chart-note" class="chart-note">Every bar shows bookmarks cleared that day.</div>
         </section>
 
+        <section class="card chart-card">
+          <div class="section-head">
+            <div class="section-title">Added vs removed</div>
+            <div class="section-subtitle">Daily deltas</div>
+          </div>
+          <div class="chart-caption">Compare bookmarks added back against bookmarks removed each day.</div>
+          <div class="chart-wrap">
+            <canvas id="change-chart" width="420" height="180"></canvas>
+          </div>
+          <div id="change-chart-note" class="chart-note">Tracking adds and removals side by side.</div>
+        </section>
+
         <section class="card section">
           <div class="section-head">
             <div class="section-title">Workday rhythm</div>
@@ -620,6 +702,8 @@
         <div class="actions">
           <button id="refresh-button" class="primary-action" type="button">Refresh Dashboard</button>
           <button id="manage-button" class="secondary-action" type="button">Open Bookmark Manager</button>
+          <button id="export-button" class="secondary-action" type="button">Export History</button>
+          <button id="reset-button" class="secondary-action" type="button">Reset Baseline</button>
         </div>
       </div>
 
