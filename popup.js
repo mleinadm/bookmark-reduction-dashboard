@@ -25,6 +25,10 @@ const changeChartCanvas = document.getElementById("change-chart");
 const intervalAlertEl = document.getElementById("interval-alert");
 const intervalAlertTitleEl = document.getElementById("interval-alert-title");
 const intervalAlertCopyEl = document.getElementById("interval-alert-copy");
+const findDuplicatesButton = document.getElementById("find-duplicates-button");
+const duplicatesBadgeEl = document.getElementById("duplicates-badge");
+const duplicatesListEl = document.getElementById("duplicates-list");
+const duplicatesNoneEl = document.getElementById("duplicates-none");
 let currentSuggestedBookmark = null;
 
 function getStorage(keys) {
@@ -116,6 +120,29 @@ function buildPastDateKeys(endDate, totalDays) {
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
+}
+
+function computeStreak(events, removedToday) {
+  const removedDays = new Set();
+  for (const event of events) {
+    if (event.type === "removed") {
+      removedDays.add(toDateKey(new Date(event.timestamp)));
+    }
+  }
+  const todayKey = toDateKey(new Date());
+  if (removedToday > 0) {
+    removedDays.add(todayKey);
+  }
+  let streak = 0;
+  const cursor = new Date();
+  if (!removedDays.has(todayKey)) {
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  while (removedDays.has(toDateKey(cursor))) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
 }
 
 function applyTheme(bookmarkCount) {
@@ -530,11 +557,14 @@ function renderDashboard({ dashboard, stats, now }) {
     stats.bookmarks,
     dailyChanges
   );
-  const todayTarget = getTodayTarget(dashboard.baselineCount || stats.bookmarks, dashboard.startDate ? fromDateKey(dashboard.startDate) : timestamp, timestamp);
   const remainingToGoal = Math.max(stats.bookmarks - GOAL_COUNT, 0);
+  const startDate = dashboard.startDate ? fromDateKey(dashboard.startDate) : timestamp;
+  const daysElapsed = Math.max(Math.floor((fromDateKey(toDateKey(timestamp)) - fromDateKey(toDateKey(startDate))) / 86400000), 0);
+  const daysRemaining = Math.max(PLAN_DAYS - daysElapsed, 1);
+  const todayTarget = Math.ceil(remainingToGoal / daysRemaining);
   const removedToday = dailyChanges[dailyChanges.length - 1]?.removed || 0;
   const addedToday = dailyChanges[dailyChanges.length - 1]?.added || 0;
-  const paceDelta = stats.bookmarks - todayTarget;
+  const paceDelta = removedToday - todayTarget;
   const intervalStatus = getIntervalStatus(dashboard.events || [], timestamp);
   const totalRemoved = dailyChanges.reduce((sum, entry) => sum + entry.removed, 0);
   const totalAdded = dailyChanges.reduce((sum, entry) => sum + entry.added, 0);
@@ -553,19 +583,26 @@ function renderDashboard({ dashboard, stats, now }) {
     ? `${formatCount(removedToday)} removed today, ${formatCount(addedToday)} added back.`
     : "No removals recorded yet today.";
   document.getElementById("daily-target").textContent = formatCount(todayTarget);
-  document.getElementById("daily-target-copy").textContent = `Target remaining count for ${formatDateLabel(timestamp)}.`;
+  document.getElementById("daily-target-copy").textContent = `Clear ${formatCount(todayTarget)} per day to reach 50 in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}.`;
   document.getElementById("pace-delta").textContent = paceDelta === 0
-    ? "0"
-    : `${paceDelta < 0 ? "-" : "+"}${formatCount(Math.abs(paceDelta))}`;
-  document.getElementById("pace-copy").textContent = paceDelta < 0
-    ? `${formatCount(Math.abs(paceDelta))} below target, ahead of plan.`
+    ? "On target"
     : paceDelta > 0
-      ? `${formatCount(paceDelta)} above target, behind plan.`
-      : "Exactly on target today.";
+      ? `${formatCount(paceDelta)} ahead`
+      : `${formatCount(Math.abs(paceDelta))} behind`;
+  document.getElementById("pace-copy").textContent = paceDelta < 0
+    ? `You are ${formatCount(Math.abs(paceDelta))} behind pace.`
+    : paceDelta > 0
+      ? `You are ${formatCount(paceDelta)} ahead of pace.`
+      : `You have cleared exactly ${formatCount(removedToday)}, matching today's target.`;
   document.getElementById("remaining-to-goal").textContent = formatCount(remainingToGoal);
   document.getElementById("goal-copy").textContent = remainingToGoal === 0
     ? "Already at or below 50."
     : `${formatCount(remainingToGoal)} bookmarks left to clear.`;
+  const streak = computeStreak(dashboard.events || [], removedToday);
+  document.getElementById("streak-value").textContent = streak;
+  document.getElementById("streak-copy").textContent = streak === 0
+    ? "Clear at least one bookmark to start a streak."
+    : `${streak} day${streak === 1 ? "" : "s"} in a row with at least one removal.`;
   document.getElementById("snapshot-caption").textContent = `Updated ${formatTimestamp(timestamp)}`;
   document.getElementById("target-caption").textContent = `${formatDateLabel(series[0].date)} to ${formatDateLabel(series[series.length - 1].date)}`;
   document.getElementById("interval-status").textContent = intervalStatus.intervalMessage;
@@ -693,6 +730,91 @@ nextSuggestionButton.addEventListener("click", async () => {
   } catch (error) {
     showMessage(errorEl, `Unable to refresh the bookmark suggestion right now. ${error.message}`);
     setBusyState(false);
+  }
+});
+
+function renderDuplicates(groups) {
+  duplicatesListEl.innerHTML = "";
+
+  if (groups.length === 0) {
+    duplicatesNoneEl.style.display = "block";
+    duplicatesBadgeEl.textContent = "None found";
+    return;
+  }
+
+  duplicatesNoneEl.style.display = "none";
+  const extraCount = groups.reduce((sum, g) => sum + g.copies.length - 1, 0);
+  duplicatesBadgeEl.textContent = `${groups.length} ${groups.length === 1 ? "group" : "groups"}, ${extraCount} extra`;
+
+  for (const group of groups) {
+    const groupEl = document.createElement("div");
+    groupEl.className = "duplicate-group";
+
+    const urlEl = document.createElement("div");
+    urlEl.className = "duplicate-url";
+    urlEl.textContent = group.url;
+    groupEl.appendChild(urlEl);
+
+    for (const copy of group.copies) {
+      const itemEl = document.createElement("div");
+      itemEl.className = "duplicate-item";
+
+      const pathEl = document.createElement("span");
+      pathEl.className = "duplicate-path";
+      pathEl.title = `${copy.folderPath} — ${copy.title}`;
+      pathEl.textContent = copy.folderPath;
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "delete-dupe-btn";
+      deleteBtn.type = "button";
+      deleteBtn.dataset.id = copy.id;
+      deleteBtn.dataset.title = copy.title;
+      deleteBtn.textContent = "Delete";
+
+      itemEl.appendChild(pathEl);
+      itemEl.appendChild(deleteBtn);
+      groupEl.appendChild(itemEl);
+    }
+
+    duplicatesListEl.appendChild(groupEl);
+  }
+}
+
+findDuplicatesButton.addEventListener("click", async () => {
+  duplicatesListEl.innerHTML = "";
+  duplicatesNoneEl.style.display = "none";
+  duplicatesBadgeEl.textContent = "Scanning...";
+  findDuplicatesButton.disabled = true;
+
+  try {
+    const groups = await sendMessage({ type: "get-duplicates" });
+    renderDuplicates(groups);
+  } catch (error) {
+    duplicatesBadgeEl.textContent = "Failed";
+    duplicatesListEl.innerHTML = `<div class="duplicate-none">${error.message}</div>`;
+  } finally {
+    findDuplicatesButton.disabled = false;
+  }
+});
+
+duplicatesListEl.addEventListener("click", async (event) => {
+  const btn = event.target.closest(".delete-dupe-btn");
+  if (!btn) return;
+
+  const { id, title } = btn.dataset;
+  if (!window.confirm(`Delete bookmark "${title}"?`)) return;
+
+  btn.disabled = true;
+  duplicatesBadgeEl.textContent = "Deleting...";
+
+  try {
+    const groups = await sendMessage({ type: "delete-bookmark", id });
+    renderDuplicates(groups);
+    footerEl.textContent = `Deleted "${title}".`;
+  } catch (error) {
+    btn.disabled = false;
+    duplicatesBadgeEl.textContent = "Error";
+    footerEl.textContent = `Failed to delete: ${error.message}`;
   }
 });
 

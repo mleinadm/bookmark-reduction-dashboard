@@ -17,19 +17,33 @@ Track your remaining bookmarks against a 14-day reduction goal, visualize progre
 | Deepest Level | Maximum nesting depth in the tree |
 | Reduced Today | Bookmarks cleared since midnight |
 
-The popup theme shifts automatically based on your current URL count:
+The popup theme **and toolbar icon badge** shift automatically based on your current URL count:
 
-| Count | Theme |
-|---|---|
-| ≤ 50 | 🟢 Green |
-| 51 – 100 | 🟡 Yellow |
-| > 100 | 🔴 Red |
+| Count | Theme | Badge color |
+|---|---|---|
+| ≤ 50 | 🟢 Green | Green |
+| 51 – 100 | 🟡 Yellow | Yellow |
+| > 100 | 🔴 Red | Red |
+
+The badge always shows the live remaining count directly on the extension icon.
 
 ### Charts
 
 - **Remaining vs Target** — 14-day line chart of actual count against the daily pace target
 - **Daily Reductions** — Bar chart of bookmarks cleared per day over 14 days
 - **Added vs Removed** — Daily comparison of bookmarks added and removed
+
+### Streak
+
+The **Streak** card counts how many consecutive days you have cleared at least one bookmark. The streak resets if a day passes with no removal.
+
+### Duplicate Detection
+
+The **Find Duplicate Bookmarks** button scans your full bookmark tree and groups URLs that resolve to the same address (ignoring `http/https`, `www.`, and trailing slashes). Each duplicate group shows:
+
+- The shared URL
+- The folder path of every copy
+- A **Delete** button per copy that removes it immediately and refreshes the list
 
 ### Workday Alerts
 
@@ -71,14 +85,19 @@ That history drives the charts, the glide-path target, background notifications,
 
 The target is to get below **50 bookmark URLs** within 14 days.
 
-$$\text{target}_{\,d} = \max\!\left(\text{baseline} - \frac{(\text{baseline} - 50)}{13} \times d,\; 50\right)$$
+**Daily target** = bookmarks above 50 ÷ days remaining in the plan:
 
-Where $d$ is the number of days elapsed since tracking started (0–13).
+$$\text{daily target} = \left\lceil \frac{\max(\text{count} - 50,\, 0)}{\text{days remaining}} \right\rceil$$
+
+**Ahead / Behind** compares how many you cleared today against that daily target:
+
+$$\text{pace delta} = \text{removed today} - \text{daily target}$$
 
 | Status | Condition |
 |---|---|
-| On pace / ahead | Current count ≤ today's target |
-| Behind pace | Current count > today's target |
+| Ahead of pace | Removed today > daily target |
+| Behind pace | Removed today < daily target |
+| On target | Removed today = daily target |
 
 ---
 
@@ -115,6 +134,7 @@ Where $d$ is the number of days elapsed since tracking started (0–13).
 | Export progress | Click **Export History** to download a JSON snapshot |
 | Reset plan | Click **Reset Baseline** to restart the 14-day window |
 | Act on a suggestion | Open, delete, or skip it from the suggestion card |
+| Find duplicates | Click **Find Duplicate Bookmarks** at the bottom of the dashboard |
 
 The dashboard syncs automatically whenever Chrome detects a bookmark change.
 

@@ -102,6 +102,74 @@ function flattenBookmarkUrls(nodes) {
   return bookmarks;
 }
 
+function flattenBookmarkUrlsWithPath(nodes) {
+  const bookmarks = [];
+
+  function traverse(nodeList, pathParts) {
+    for (const node of nodeList) {
+      if (node.url) {
+        bookmarks.push({
+          id: node.id,
+          title: node.title || node.url,
+          url: node.url,
+          folderPath: pathParts.length > 0 ? pathParts.join(" / ") : "Bookmarks"
+        });
+        continue;
+      }
+
+      if (node.children) {
+        const nextPath = node.parentId !== undefined
+          ? [...pathParts, node.title || "Unnamed folder"]
+          : pathParts;
+        traverse(node.children, nextPath);
+      }
+    }
+  }
+
+  traverse(nodes, []);
+  return bookmarks;
+}
+
+function normalizeUrl(url) {
+  return url.toLowerCase().replace(/\/+$/, "").replace(/^https?:\/\/(www\.)?/, "");
+}
+
+function findDuplicateBookmarks(tree) {
+  const bookmarks = flattenBookmarkUrlsWithPath(tree);
+  const byUrl = new Map();
+
+  for (const bookmark of bookmarks) {
+    const key = normalizeUrl(bookmark.url);
+    if (!byUrl.has(key)) {
+      byUrl.set(key, []);
+    }
+    byUrl.get(key).push(bookmark);
+  }
+
+  const groups = [];
+  for (const copies of byUrl.values()) {
+    if (copies.length > 1) {
+      groups.push({ url: copies[0].url, copies });
+    }
+  }
+
+  groups.sort((a, b) => b.copies.length - a.copies.length);
+  return groups;
+}
+
+function deleteBookmarkById(id) {
+  return new Promise((resolve, reject) => {
+    chrome.bookmarks.remove(id, () => {
+      const error = chrome.runtime.lastError;
+      if (error) {
+        reject(new Error(error.message));
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
 function toDateKey(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -233,6 +301,12 @@ async function syncDashboard() {
   }
 
   await setStorage({ [STORAGE_KEY]: dashboard });
+
+  const badgeText = stats.bookmarks > 999 ? "999+" : String(stats.bookmarks);
+  const badgeColor = stats.bookmarks <= 50 ? "#2d8a57" : stats.bookmarks <= 100 ? "#cb9c1b" : "#cc4b4b";
+  chrome.action.setBadgeText({ text: badgeText });
+  chrome.action.setBadgeBackgroundColor({ color: badgeColor });
+
   return { dashboard, stats, now: now.toISOString() };
 }
 
@@ -471,6 +545,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === "delete-suggested-bookmark") {
     deleteSuggestedBookmark()
       .then((payload) => sendResponse({ ok: true, payload }))
+      .catch((error) => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
+
+  if (message?.type === "get-duplicates") {
+    getBookmarkTree()
+      .then((tree) => sendResponse({ ok: true, payload: findDuplicateBookmarks(tree) }))
+      .catch((error) => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
+
+  if (message?.type === "delete-bookmark") {
+    deleteBookmarkById(message.id)
+      .then(() => getBookmarkTree())
+      .then((tree) => sendResponse({ ok: true, payload: findDuplicateBookmarks(tree) }))
       .catch((error) => sendResponse({ ok: false, error: error.message }));
     return true;
   }

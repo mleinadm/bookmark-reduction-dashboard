@@ -280,7 +280,7 @@
 
     .split {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
     }
 
@@ -532,6 +532,64 @@
         transform: rotate(360deg);
       }
     }
+
+    .duplicate-group {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .duplicate-group:first-child {
+      padding-top: 0;
+    }
+
+    .duplicate-group:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .duplicate-url {
+      font-size: 12px;
+      color: var(--muted);
+      word-break: break-all;
+      margin-bottom: 6px;
+      line-height: 1.45;
+    }
+
+    .duplicate-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 5px 0;
+    }
+
+    .duplicate-path {
+      font-size: 12px;
+      line-height: 1.4;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+    }
+
+    .delete-dupe-btn {
+      flex-shrink: 0;
+      padding: 5px 11px;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--accent) 10%, white 90%);
+      color: var(--accent);
+      border: 1px solid color-mix(in srgb, var(--accent) 20%, white 80%);
+    }
+
+    .duplicate-none {
+      font-size: 13px;
+      color: var(--muted);
+      padding: 4px 0;
+    }
   </style>
 </head>
 <body class="theme-green">
@@ -644,6 +702,11 @@
             <div id="remaining-to-goal" class="mini-value">0</div>
             <div id="goal-copy" class="mini-copy">Bookmarks left above 50.</div>
           </div>
+          <div class="card mini-card">
+            <div class="mini-label">Streak</div>
+            <div id="streak-value" class="mini-value">0</div>
+            <div id="streak-copy" class="mini-copy">Clear at least one bookmark to start a streak.</div>
+          </div>
         </section>
 
         <section class="card chart-card">
@@ -705,6 +768,18 @@
           <button id="export-button" class="secondary-action" type="button">Export History</button>
           <button id="reset-button" class="secondary-action" type="button">Reset Baseline</button>
         </div>
+
+        <section class="card section">
+          <div class="section-head">
+            <div class="section-title">Duplicate Bookmarks</div>
+            <div id="duplicates-badge" class="section-subtitle"></div>
+          </div>
+          <div id="duplicates-list"></div>
+          <div id="duplicates-none" class="duplicate-none" style="display: none;">No duplicate URLs found.</div>
+          <div style="margin-top: 14px;">
+            <button id="find-duplicates-button" class="secondary-action" type="button" style="width: 100%;">Find Duplicate Bookmarks</button>
+          </div>
+        </section>
       </div>
 
       <div id="footer" class="footer">Waiting for first scan...</div>
